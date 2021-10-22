@@ -7,7 +7,6 @@ Created on 19/10/2021 13:50,
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
-from google.cloud import bigquery
 from datetime import datetime, timedelta
 from airflow import DAG
 from pandas import DataFrame
@@ -35,9 +34,15 @@ def _extract_data_from_bq():
     )
 
 def _process_data(ti) -> DataFrame:
-    dataframe = ti.xcom_pull(task_ids='extract_data_from_bq')
+    dataframe_str = ti.xcom_pull(task_ids='extract_data_from_bq')
 
-    print(f'TIPO ----> {type(dataframe)}')
+    # CONVERTER DE STRING PARA JSON
+    json_dataframe = loads(dataframe_str)
+
+    # CONVERTER JSON PARA DATAFRAME
+    dataframe = json_normalize(json_dataframe)
+
+    print(dataframe.head())
 
     return dataframe
 
@@ -50,14 +55,14 @@ def _upload_data_on_postgresql(ti) -> None:
     # CONVERTER JSON PARA DATAFRAME
     dataframe = json_normalize(json_dataframe)
 
-    print(dataframe.head())
+    print(f'TIPO ---> {type(dataframe)}')
 
     # dialect+driver://username:password@host:port/database
     engine = create_engine(
-        f"postgresql+psycopg2://{POSTGRESQL_CREDENTIALS['username']}:{POSTGRESQL_CREDENTIALS['passwd']}@localhost:5432/postgres"
+        f"postgresql+psycopg2://{POSTGRESQL_CREDENTIALS['username']}:{POSTGRESQL_CREDENTIALS['passwd']}@postgres:5432/postgres"
     )
 
-    dataframe.to_sql('class', engine, if_exists='replace', index=False)
+    dataframe.to_sql('bigquery.tokens', engine, if_exists='replace', index=False)
 
 
 docs = """
