@@ -29,7 +29,7 @@ def _extract_data_from_bq():
     """
 
     return (
-        BigQueryHook(bigquery_conn_id='my_gcp_connection', use_legacy_sql=True)
+        BigQueryHook(bigquery_conn_id='my_gcp_connection', use_legacy_sql=False)
         .get_pandas_df(query_string)
         .to_json()
     )
