@@ -21,8 +21,6 @@ POSTGRESQL_CREDENTIALS = Variable.get('postgresql_credentials', deserialize_json
 
 def _extract_data_from_bq():
 
-    # bqclient = bigquery.Client()
-
     query_string = \
     """
         SELECT
@@ -30,8 +28,11 @@ def _extract_data_from_bq():
         FROM `bigquery-public-data.crypto_ethereum_classic.tokens`
     """
 
-    return BigQueryHook(bigquery_conn_id='my_gcp_connection', use_legacy_sql=True).get_pandas_df(query_string).to_json()
-    # return bqclient.query(query_string).result().to_dataframe().to_json()
+    return (
+        BigQueryHook(bigquery_conn_id='my_gcp_connection', use_legacy_sql=True)
+        .get_pandas_df(query_string)
+        .to_json()
+    )
 
 def _process_data(ti) -> DataFrame:
     dataframe = ti.xcom_pull(task_ids='extract_data_from_bq')
@@ -67,7 +68,7 @@ ETL - Criptomoedas
 default_args = {
     'owner': 'Breno Gomes',
     'depends_on_past': False,
-    'start_date': datetime(2021, 10, 19),
+    'start_date': datetime(2021, 10, 22),
     'retries': 2,
     'retry_delay': timedelta(minutes=1)
 }
@@ -76,7 +77,7 @@ with DAG(
     dag_id="dag_etl_bq_to_postgresql",
     default_args=default_args,
     description='ETL simples',
-    schedule_interval='30 12 * * *',
+    schedule_interval='0 12 * * *',
     dagrun_timeout=timedelta(minutes=15),
     catchup=False,
     tags=['dev'],
