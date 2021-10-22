@@ -10,7 +10,7 @@ from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
 from datetime import datetime, timedelta
 from airflow import DAG
 from pandas import DataFrame
-from pandas.json import json_normalize
+from pandas.io.json import json_normalize
 from sqlalchemy import create_engine
 from json import loads
 
