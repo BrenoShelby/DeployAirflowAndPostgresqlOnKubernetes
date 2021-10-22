@@ -40,11 +40,11 @@ def _process_data(ti) -> DataFrame:
     json_dataframe = loads(dataframe_str)
 
     # CONVERTER JSON PARA DATAFRAME
-    dataframe = json_normalize(json_dataframe)
+    dataframe: DataFrame = json_normalize(json_dataframe)
 
     print(dataframe.head())
 
-    return dataframe
+    return dataframe.to_json()
 
 def _upload_data_on_postgresql(ti) -> None:
     data_str = ti.xcom_pull(task_ids='process_data')
