@@ -6,6 +6,7 @@ Created on 19/10/2021 13:50,
 
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
+from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
 from google.cloud import bigquery
 from datetime import datetime, timedelta
 from airflow import DAG
@@ -20,7 +21,7 @@ POSTGRESQL_CREDENTIALS = Variable.get('postgresql_credentials', deserialize_json
 
 def _extract_data_from_bq():
 
-    bqclient = bigquery.Client()
+    # bqclient = bigquery.Client()
 
     query_string = \
     """
@@ -29,7 +30,8 @@ def _extract_data_from_bq():
         FROM `bigquery-public-data.crypto_ethereum_classic.tokens`
     """
 
-    return bqclient.query(query_string).result().to_dataframe().to_json()
+    return BigQueryHook(bigquery_conn_id='my_gcp_connection', use_legacy_sql=True).get_pandas_df(query_string).to_json()
+    # return bqclient.query(query_string).result().to_dataframe().to_json()
 
 def _process_data(ti) -> DataFrame:
     dataframe = ti.xcom_pull(task_ids='extract_data_from_bq')
@@ -40,7 +42,6 @@ def _process_data(ti) -> DataFrame:
 
 def _upload_data_on_postgresql(ti) -> None:
     data_str = ti.xcom_pull(task_ids='process_data')
-    # dialect+driver://username:password@host:port/database
 
     # CONVERTER DE STRING PARA JSON
     json_dataframe = loads(data_str)
@@ -48,6 +49,9 @@ def _upload_data_on_postgresql(ti) -> None:
     # CONVERTER JSON PARA DATAFRAME
     dataframe = json_normalize(json_dataframe)
 
+    print(dataframe.head())
+
+    # dialect+driver://username:password@host:port/database
     engine = create_engine(
         f"postgresql+psycopg2://{POSTGRESQL_CREDENTIALS['username']}:{POSTGRESQL_CREDENTIALS['passwd']}@localhost:5432/postgres"
     )
