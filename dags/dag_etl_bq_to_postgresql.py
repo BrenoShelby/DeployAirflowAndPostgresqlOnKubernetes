@@ -10,7 +10,7 @@ from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
 from datetime import datetime, timedelta
 from airflow import DAG
 from pandas import DataFrame
-from pandas.io.json import json_normalize
+from pandas.json import json_normalize
 from sqlalchemy import create_engine
 from json import loads
 
@@ -42,8 +42,6 @@ def _process_data(ti) -> DataFrame:
     # CONVERTER JSON PARA DATAFRAME
     dataframe: DataFrame = json_normalize(json_dataframe)
 
-    print(dataframe.head())
-
     return dataframe.to_json()
 
 def _upload_data_on_postgresql(ti) -> None:
@@ -57,11 +55,11 @@ def _upload_data_on_postgresql(ti) -> None:
 
     print(f'TIPO ---> {type(dataframe)}')
 
-    # dialect+driver://username:password@host:port/database
     engine = create_engine(
         f"postgresql+psycopg2://{POSTGRESQL_CREDENTIALS['username']}:{POSTGRESQL_CREDENTIALS['passwd']}@postgres:5432/postgres"
     )
 
+    # UPLOAD PARA POSTGRESQL
     dataframe.to_sql('bigquery.tokens', engine, if_exists='replace', index=False)
 
 
